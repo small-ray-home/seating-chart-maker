@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6x6 座位編排器 Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        .seat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+        .diagonal-stripe { background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #e2e8f0 10px, #e2e8f0 20px); }
+        .popover { position: absolute; z-index: 100; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); width: 180px; padding: 8px; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8 text-slate-800" onclick="closeAllPopovers(event)">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-black text-indigo-900">座位編排器 Pro</h1>
+                <p class="text-slate-500 font-medium">智慧隨機編排系統</p>
+            </div>
+            <button onclick="downloadImage()" class="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg hover:bg-emerald-700 transition-all flex items-center gap-2">
+                📥 下載座位表圖片
+            </button>
+        </div>
+
+        <!-- 固定顯示的使用說明 -->
+        <div class="mb-8 bg-indigo-900 text-indigo-100 p-6 rounded-3xl shadow-xl shadow-indigo-100">
+            <h3 class="font-bold mb-4 text-white flex items-center gap-2">
+                <span class="bg-indigo-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">i</span>
+                快速使用說明
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                <div class="bg-indigo-800/50 p-4 rounded-2xl border border-indigo-700">
+                    <p class="font-bold text-indigo-300 mb-2">1. 規劃教室佈局</p>
+                    <p class="leading-relaxed text-indigo-200/80">點擊右側網格位置，可設定「導師桌」、「禁坐區」或「固定特定學生」。</p>
+                </div>
+                <div class="bg-indigo-800/50 p-4 rounded-2xl border border-indigo-700">
+                    <p class="font-bold text-indigo-300 mb-2">2. 設定學生屬性</p>
+                    <p class="leading-relaxed text-indigo-200/80">輸入名單後，點擊姓名標記「優先前排(★)」。系統會優先將其排在最前兩排。</p>
+                </div>
+                <div class="bg-indigo-800/50 p-4 rounded-2xl border border-indigo-700">
+                    <p class="font-bold text-indigo-300 mb-2">3. 執行智慧編排</p>
+                    <p class="leading-relaxed text-indigo-200/80">點擊編排按鈕，系統會根據避開規則與優先權，在毫秒內計算出最佳座位圖。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left Controls -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                    <h2 class="font-bold mb-4 flex items-center gap-2 text-indigo-900 text-lg">名單管理</h2>
+                    <textarea id="studentInput" class="w-full h-40 p-4 border border-slate-100 bg-slate-50 rounded-2xl text-sm mb-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" placeholder="輸入姓名，每行一位..."></textarea>
+                    
+                    <div id="priorityArea" class="mt-4">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider">點擊標記優先前排 (★)</p>
+                        <div id="studentChips" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                    <h2 class="font-bold mb-4 text-red-900 text-lg">避開規則 (分開坐)</h2>
+                    <div class="flex gap-2 mb-4">
+                        <input id="avoid1" type="text" placeholder="姓名 A" class="w-1/2 p-3 text-sm border border-slate-100 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-red-200">
+                        <input id="avoid2" type="text" placeholder="姓名 B" class="w-1/2 p-3 text-sm border border-slate-100 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-red-200">
+                    </div>
+                    <button onclick="addAvoidRule()" class="w-full py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors">➕ 新增規則</button>
+                    <div id="ruleList" class="mt-4 space-y-2"></div>
+                </div>
+
+                <button onclick="generateArrangement()" class="w-full bg-indigo-600 text-white font-black py-5 rounded-3xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all">
+                    🎲 開始智慧隨機編排
+                </button>
+                <p id="errorMsg" class="text-red-500 text-xs font-bold text-center hidden p-3 bg-red-50 rounded-xl"></p>
+            </div>
+
+            <!-- Right Grid -->
+            <div class="lg:col-span-8">
+                <div id="captureTarget" class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative">
+                    <div class="mb-10 text-center">
+                        <div class="inline-block px-10 py-3 bg-slate-800 text-white rounded-full text-sm font-bold uppercase tracking-[0.2em] shadow-lg">
+                             黑板 / 老師講台 方向
+                        </div>
+                    </div>
+
+                    <div id="seatGrid" class="seat-grid relative">
+                        <!-- Seats generated by JS -->
+                    </div>
+
+                    <div class="mt-12 flex flex-wrap justify-center gap-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 p-6 rounded-2xl">
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 bg-slate-800 rounded-md"></div> 老師位</div>
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 border-2 border-amber-400 bg-white rounded-md"></div> 固定位</div>
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 diagonal-stripe border border-slate-200 rounded-md"></div> 禁坐區</div>
+                        <div class="flex items-center gap-2"><span class="text-amber-500 text-lg">★</span> 優先前排</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popover Container -->
+    <div id="popoverRoot"></div>
+
+    <script>
+        let seats = Array(36).fill(null).map((_, i) => ({ id: i, type: 'normal', student: null, isFixed: false }));
+        let priorityStudents = new Set();
+        let avoidRules = [];
+
+        function initGrid() {
+            const grid = document.getElementById('seatGrid');
+            grid.innerHTML = '';
+            seats.forEach((seat, i) => {
+                const container = document.createElement('div');
+                container.className = 'relative';
+                
+                const btn = document.createElement('button');
+                btn.className = `w-full aspect-square rounded-2xl border-2 flex flex-col items-center justify-center relative transition-all p-1`;
+                
+                if (seat.type === 'teacher') {
+                    btn.classList.add('bg-slate-800', 'border-slate-800', 'text-white');
+                    btn.innerHTML = `<span class="text-[10px] font-bold">老師</span>`;
+                } else if (seat.type === 'blocked') {
+                    btn.classList.add('diagonal-stripe', 'border-slate-200', 'text-slate-300');
+                    btn.innerHTML = `<span class="text-[10px]">禁坐</span>`;
+                } else {
+                    btn.classList.add('bg-white', 'border-slate-100', 'hover:border-indigo-300', 'hover:shadow-md');
+                    if(seat.isFixed) btn.classList.add('border-amber-400', 'ring-4', 'ring-amber-50');
+                    
+                    const isPriority = priorityStudents.has(seat.student);
+                    btn.innerHTML = `
+                        <span class="absolute top-2 left-2 text-[8px] font-bold text-slate-300">${i+1}</span>
+                        <span class="font-black text-sm md:text-base ${isPriority ? 'text-amber-600' : 'text-slate-700'}">${seat.student || ''}</span>
+                        ${isPriority ? '<span class="absolute top-2 right-2 text-amber-500 text-[10px]">★</span>' : ''}
+                        ${seat.isFixed ? '<span class="absolute bottom-2 right-2 text-amber-400 text-[8px]">📌</span>' : ''}
+                    `;
+                    if(isPriority) btn.classList.add('bg-amber-50/30');
+                }
+
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    showPopover(e, i);
+                };
+                container.appendChild(btn);
+                grid.appendChild(container);
+            });
+        }
+
+        function showPopover(e, index) {
+            closeAllPopovers();
+            const rect = e.currentTarget.getBoundingClientRect();
+            const popover = document.createElement('div');
+            popover.id = 'activePopover';
+            popover.className = 'popover shadow-2xl border border-slate-200 bg-white rounded-2xl overflow-hidden';
+            popover.style.top = (window.scrollY + rect.top + rect.height + 8) + 'px';
+            popover.style.left = Math.min(rect.left, window.innerWidth - 200) + 'px';
+
+            const names = getNames();
+            let nameOptions = names.map(n => `<button onclick="fixStudent(${index}, '${n}')" class="w-full text-left px-4 py-2 hover:bg-amber-50 text-xs text-amber-700 transition font-medium border-b border-slate-50 last:border-0">📌 固定：${n}</button>`).join('');
+
+            popover.innerHTML = `
+                <div class="p-3 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">位置 ${index+1} 設定</div>
+                <div class="p-1">
+                    <button onclick="updateSeat(${index}, 'normal')" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 rounded-xl text-xs flex items-center gap-2">🟢 一般座位</button>
+                    <button onclick="updateSeat(${index}, 'teacher')" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 rounded-xl text-xs flex items-center gap-2 text-indigo-600">👔 設為老師桌</button>
+                    <button onclick="updateSeat(${index}, 'blocked')" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 rounded-xl text-xs flex items-center gap-2 text-red-500">🚫 設為禁坐區</button>
+                </div>
+                <div class="border-t border-slate-100 bg-slate-50/50 max-h-40 overflow-y-auto">
+                    <p class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-tighter">指定學生固定在此</p>
+                    ${nameOptions || '<p class="px-4 py-3 text-[10px] text-slate-300 italic">請先在左側輸入名單</p>'}
+                </div>
+            `;
+            document.body.appendChild(popover);
+        }
+
+        function closeAllPopovers() {
+            const p = document.getElementById('activePopover');
+            if(p) p.remove();
+        }
+
+        function updateSeat(index, type) {
+            seats[index] = { ...seats[index], type: type, student: null, isFixed: false };
+            initGrid();
+            closeAllPopovers();
+        }
+
+        function fixStudent(index, name) {
+            seats = seats.map(s => s.student === name ? { ...s, student: null, isFixed: false } : s);
+            seats[index] = { ...seats[index], type: 'normal', student: name, isFixed: true };
+            initGrid();
+            closeAllPopovers();
+        }
+
+        function getNames() {
+            return document.getElementById('studentInput').value.split('\n').map(n => n.trim()).filter(n => n !== "");
+        }
+
+        document.getElementById('studentInput').oninput = function(e) {
+            const names = getNames();
+            const container = document.getElementById('studentChips');
+            container.innerHTML = '';
+            names.forEach(name => {
+                const chip = document.createElement('button');
+                chip.className = `px-3 py-1.5 text-xs rounded-xl border transition-all ${priorityStudents.has(name) ? 'bg-amber-100 text-amber-700 border-amber-200 font-black shadow-sm' : 'bg-white text-slate-500 border-slate-200 shadow-sm hover:border-indigo-300'}`;
+                chip.innerText = name + (priorityStudents.has(name) ? ' ★' : '');
+                chip.onclick = () => {
+                    if(priorityStudents.has(name)) priorityStudents.delete(name);
+                    else priorityStudents.add(name);
+                    document.getElementById('studentInput').dispatchEvent(new Event('input'));
+                };
+                container.appendChild(chip);
+            });
+        };
+
+        function addAvoidRule() {
+            const n1 = document.getElementById('avoid1').value.trim();
+            const n2 = document.getElementById('avoid2').value.trim();
+            if(n1 && n2 && n1 !== n2) {
+                avoidRules.push([n1, n2]);
+                renderRules();
+                document.getElementById('avoid1').value = '';
+                document.getElementById('avoid2').value = '';
+            }
+        }
+
+        function renderRules() {
+            const list = document.getElementById('ruleList');
+            list.innerHTML = '';
+            avoidRules.forEach((pair, i) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-red-50 text-red-700 px-4 py-2 rounded-xl text-xs border border-red-100 font-medium";
+                div.innerHTML = `<span>${pair[0]} ↔ ${pair[1]}</span><button onclick="avoidRules.splice(${i},1);renderRules();" class="w-6 h-6 flex items-center justify-center hover:bg-red-200 rounded-full transition-colors">✕</button>`;
+                list.appendChild(div);
+            });
+        }
+
+        function generateArrangement() {
+            const names = getNames();
+            const fixedStudents = seats.filter(s => s.isFixed && s.student).map(s => s.student);
+            const toAssign = names.filter(n => !fixedStudents.includes(n));
+            const normalSeatsCount = seats.filter(s => s.type === 'normal' && !s.isFixed).length;
+            
+            const errorMsg = document.getElementById('errorMsg');
+            if(toAssign.length > normalSeatsCount) {
+                errorMsg.innerText = "❌ 剩餘學生人數超過可用位置！";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+            errorMsg.classList.add('hidden');
+
+            let success = false;
+            let attempts = 0;
+            
+            while(attempts < 1000 && !success) {
+                attempts++;
+                let tempP = toAssign.filter(n => priorityStudents.has(n)).sort(() => Math.random() - 0.5);
+                let tempN = toAssign.filter(n => !priorityStudents.has(n)).sort(() => Math.random() - 0.5);
+                
+                let tempSeats = seats.map(s => ({...s, student: s.isFixed ? s.student : null}));
+                
+                // 優先排前排 (0-11 位)
+                for(let i=0; i<36 && tempP.length > 0; i++) {
+                    if(tempSeats[i].type === 'normal' && !tempSeats[i].student) {
+                        tempSeats[i].student = tempP.shift();
+                    }
+                }
+                // 排普通
+                for(let i=0; i<36 && tempN.length > 0; i++) {
+                    if(tempSeats[i].type === 'normal' && !tempSeats[i].student) {
+                        tempSeats[i].student = tempN.shift();
+                    }
+                }
+
+                if(validate(tempSeats)) {
+                    seats = tempSeats;
+                    success = true;
+                }
+            }
+
+            if(!success) {
+                errorMsg.innerText = "❌ 規則太複雜無法完成編排，請減少避開規則。";
+                errorMsg.classList.remove('hidden');
+            } else {
+                initGrid();
+            }
+        }
+
+        function validate(layout) {
+            for(let i=0; i<36; i++) {
+                const s1 = layout[i].student;
+                if(!s1) continue;
+                const neighbors = [];
+                if(i % 6 > 0) neighbors.push(i-1);
+                if(i % 6 < 5) neighbors.push(i+1);
+                if(i >= 6) neighbors.push(i-6);
+                if(i + 6 < 36) neighbors.push(i+6);
+
+                for(const nIdx of neighbors) {
+                    const s2 = layout[nIdx].student;
+                    if(!s2) continue;
+                    for(const [b1, b2] of avoidRules) {
+                        if((s1===b1 && s2===b2) || (s1===b2 && s2===b1)) return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        async function downloadImage() {
+            closeAllPopovers();
+            const target = document.getElementById('captureTarget');
+            const canvas = await html2canvas(target, { 
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+            const link = document.createElement('a');
+            link.download = `座位表_${new Date().toLocaleDateString()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        initGrid();
+    </script>
+</body>
+</html>
