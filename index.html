@@ -7,12 +7,37 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        .seat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
-        .diagonal-stripe { background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #e2e8f0 10px, #e2e8f0 20px); }
-        .popover { position: absolute; z-index: 100; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2); width: 180px; padding: 8px; animation: fadeIn 0.15s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-        .dragging { opacity: 0.5; transform: scale(0.95); }
-        .drag-over { border-color: #6366f1 !important; background-color: #eef2ff !important; }
+        .seat-grid { 
+            display: grid; 
+            grid-template-columns: repeat(6, 1fr); 
+            gap: 10px; 
+        }
+        .diagonal-stripe { 
+            background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #e2e8f0 10px, #e2e8f0 20px); 
+        }
+        .popover { 
+            position: absolute; 
+            z-index: 100; 
+            background: white; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2); 
+            width: 200px; 
+            padding: 8px; 
+            animation: fadeIn 0.15s ease-out; 
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(-5px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .dragging { 
+            opacity: 0.5; 
+            transform: scale(0.95); 
+        }
+        .drag-over { 
+            border-color: #6366f1 !important; 
+            background-color: #eef2ff !important; 
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen p-4 md:p-8 text-slate-800" onclick="closeAllPopovers(event)">
@@ -43,7 +68,7 @@
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
                 <div class="bg-indigo-800/50 p-4 rounded-2xl border border-indigo-700">
                     <p class="font-bold text-indigo-300 mb-2">1. 名單與優先權</p>
-                    <p class="leading-relaxed opacity-80">輸入名單後，點擊下方姓名標籤標記「★ 優先前排」。</p>
+                    <p class="leading-relaxed opacity-80">貼上「座號 英文名 中文名」（一行一位），可點擊標籤標記「★ 優先前排」。</p>
                 </div>
                 <div class="bg-indigo-800/50 p-4 rounded-2xl border border-indigo-700">
                     <p class="font-bold text-indigo-300 mb-2">2. 座位選單</p>
@@ -68,8 +93,9 @@
             <!-- Left Controls -->
             <div class="lg:col-span-4 space-y-6">
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                    <h2 class="font-bold mb-4 flex items-center gap-2 text-indigo-900 text-lg">名單管理</h2>
-                    <textarea id="studentInput" class="w-full h-40 p-4 border border-slate-100 bg-slate-50 rounded-2xl text-sm mb-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="輸入姓名，每行一位..."></textarea>
+                    <h2 class="font-bold mb-2 flex items-center gap-2 text-indigo-900 text-lg">名單管理</h2>
+                    <p class="text-xs text-slate-400 mb-3">格式：座號(2位數) 英文姓名 中文姓名（每行一位）</p>
+                    <textarea id="studentInput" class="w-full h-44 p-4 border border-slate-100 bg-slate-50 rounded-2xl text-sm mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-mono" placeholder="01 Alex 張三&#10;02 Bob 李四&#10;12 John 王小明&#10;34 Amy 陳小華"></textarea>
                     
                     <div id="priorityArea" class="mt-4">
                         <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider">標記優先前排 (★)</p>
@@ -80,8 +106,8 @@
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                     <h2 class="font-bold mb-4 text-red-900 text-lg">避開規則 (分開坐)</h2>
                     <div class="flex gap-2 mb-4">
-                        <input id="avoid1" type="text" placeholder="姓名 A" class="w-1/2 p-3 text-sm border border-slate-100 bg-slate-50 rounded-xl outline-none">
-                        <input id="avoid2" type="text" placeholder="姓名 B" class="w-1/2 p-3 text-sm border border-slate-100 bg-slate-50 rounded-xl outline-none">
+                        <input id="avoid1" type="text" placeholder="座號/姓名 A" class="w-1/2 p-3 text-sm border border-slate-100 bg-slate-50 rounded-xl outline-none">
+                        <input id="avoid2" type="text" placeholder="座號/姓名 B" class="w-1/2 p-3 text-sm border border-slate-100 bg-slate-50 rounded-xl outline-none">
                     </div>
                     <button onclick="addAvoidRule()" class="w-full py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors">➕ 新增規則</button>
                     <div id="ruleList" class="mt-4 space-y-2"></div>
@@ -123,6 +149,70 @@
         let avoidRules = [];
         let draggedIndex = null;
 
+        // 解析單行學生資料 (座號 限2位數, 英文名, 中文名)
+        function parseStudentLine(line) {
+            line = line.trim();
+            if (!line) return null;
+
+            const parts = line.split(/\s+/);
+            let num = "";
+            let eng = "";
+            let chi = "";
+
+            if (parts.length > 0) {
+                // 檢查第一項是否包含數字座號
+                const numMatch = parts[0].match(/\d+/);
+                if (numMatch) {
+                    // 限制與補滿為兩位數
+                    let rawNum = parseInt(numMatch[0], 10);
+                    num = String(rawNum).padStart(2, '0').slice(-2);
+                    parts.shift();
+                }
+
+                // 剩餘部分分類英文與中文
+                const engParts = [];
+                const chiParts = [];
+
+                parts.forEach(p => {
+                    if (/^[A-Za-z\s'-]+$/.test(p)) {
+                        engParts.push(p);
+                    } else {
+                        chiParts.push(p);
+                    }
+                });
+
+                eng = engParts.join(' ');
+                chi = chiParts.join(' ');
+            }
+
+            return {
+                num: num,
+                eng: eng,
+                chi: chi,
+                raw: line,
+                id: num || line
+            };
+        }
+
+        function getParsedStudents() {
+            const rawLines = document.getElementById('studentInput').value.split('\n');
+            const list = [];
+            rawLines.forEach(line => {
+                const parsed = parseStudentLine(line);
+                if (parsed) list.push(parsed);
+            });
+            return list;
+        }
+
+        function formatStudentLabel(stu) {
+            if (!stu) return "";
+            let label = "";
+            if (stu.num) label += `[${stu.num}] `;
+            if (stu.eng) label += `${stu.eng} `;
+            if (stu.chi) label += stu.chi;
+            return label.trim() || stu.raw;
+        }
+
         function initGrid() {
             const grid = document.getElementById('seatGrid');
             grid.innerHTML = '';
@@ -131,7 +221,7 @@
                 container.className = 'relative';
                 
                 const btn = document.createElement('div');
-                btn.className = `w-full aspect-square rounded-2xl border-2 flex flex-col items-center justify-center relative transition-all p-1 cursor-pointer select-none`;
+                btn.className = `w-full aspect-square rounded-2xl border-2 flex flex-col items-center justify-center relative transition-all p-1 cursor-pointer select-none overflow-hidden`;
                 
                 if (seat.type === 'normal') {
                     btn.draggable = !!seat.student;
@@ -152,12 +242,25 @@
                     btn.classList.add('bg-white', 'border-slate-100', 'hover:border-indigo-300');
                     if(seat.isFixed) btn.classList.add('border-amber-400', 'ring-4', 'ring-amber-50');
                     
-                    const isPriority = priorityStudents.has(seat.student);
+                    const stu = seat.student;
+                    const isPriority = stu && priorityStudents.has(stu.id);
+
+                    let studentContent = "";
+                    if (stu) {
+                        studentContent = `
+                            ${stu.num ? `<span class="text-[10px] font-mono font-bold text-indigo-500 bg-indigo-50 px-1 rounded">${stu.num}</span>` : ''}
+                            ${stu.eng ? `<span class="text-[9px] font-semibold text-slate-400 leading-none truncate max-w-full">${stu.eng}</span>` : ''}
+                            ${stu.chi ? `<span class="font-black text-xs md:text-sm ${isPriority ? 'text-amber-600' : 'text-slate-700'} leading-tight truncate max-w-full">${stu.chi}</span>` : ''}
+                        `;
+                    }
+
                     btn.innerHTML = `
-                        <span class="absolute top-2 left-2 text-[8px] font-bold text-slate-300">${i+1}</span>
-                        <span class="font-black text-sm md:text-base ${isPriority ? 'text-amber-600' : 'text-slate-700'}">${seat.student || ''}</span>
-                        ${isPriority ? '<span class="absolute top-2 right-2 text-amber-500 text-[10px]">★</span>' : ''}
-                        ${seat.isFixed ? '<span class="absolute bottom-2 right-2 text-amber-400 text-[8px]">📌</span>' : ''}
+                        <span class="absolute top-1 left-1 text-[8px] font-bold text-slate-300">${i+1}</span>
+                        <div class="flex flex-col items-center justify-center w-full h-full px-1 py-2 text-center gap-0.5">
+                            ${studentContent}
+                        </div>
+                        ${isPriority ? '<span class="absolute top-1 right-1 text-amber-500 text-[10px]">★</span>' : ''}
+                        ${seat.isFixed ? '<span class="absolute bottom-1 right-1 text-amber-400 text-[8px]">📌</span>' : ''}
                     `;
                     if(isPriority) btn.classList.add('bg-amber-50/30');
                 }
@@ -187,21 +290,24 @@
             popover.id = 'activePopover';
             popover.className = 'popover';
             popover.style.top = (window.scrollY + rect.top + rect.height + 8) + 'px';
-            popover.style.left = Math.min(rect.left, window.innerWidth - 200) + 'px';
+            popover.style.left = Math.min(rect.left, window.innerWidth - 220) + 'px';
 
-            const names = getNames();
-            let nameOptions = names.map(n => `<button onclick="fixStudent(${index}, '${n}')" class="w-full text-left px-4 py-2 hover:bg-amber-50 text-xs text-amber-700 transition font-medium border-b border-slate-50 last:border-0">📌 固定：${n}</button>`).join('');
+            const students = getParsedStudents();
+            let nameOptions = students.map(s => {
+                const label = formatStudentLabel(s);
+                return `<button onclick="fixStudent(${index}, '${s.id}')" class="w-full text-left px-3 py-2 hover:bg-amber-50 text-xs text-amber-700 transition font-medium border-b border-slate-50 last:border-0 truncate">📌 固定：${label}</button>`;
+            }).join('');
 
             popover.innerHTML = `
-                <div class="p-3 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">位置 ${index+1} 設定</div>
+                <div class="p-2 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">位置 ${index+1} 設定</div>
                 <div class="p-1">
-                    <button onclick="updateSeat(${index}, 'normal')" class="w-full text-left px-4 py-2 hover:bg-slate-50 rounded-xl text-xs flex items-center gap-2">🟢 一般座位</button>
-                    <button onclick="updateSeat(${index}, 'teacher')" class="w-full text-left px-4 py-2 hover:bg-slate-50 rounded-xl text-xs flex items-center gap-2 text-indigo-600">👔 設為老師桌</button>
-                    <button onclick="updateSeat(${index}, 'blocked')" class="w-full text-left px-4 py-2 hover:bg-slate-50 rounded-xl text-xs flex items-center gap-2 text-red-500">🚫 設為禁坐區</button>
+                    <button onclick="updateSeat(${index}, 'normal')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-xl text-xs flex items-center gap-2">🟢 一般座位</button>
+                    <button onclick="updateSeat(${index}, 'teacher')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-xl text-xs flex items-center gap-2 text-indigo-600">👔 設為老師桌</button>
+                    <button onclick="updateSeat(${index}, 'blocked')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-xl text-xs flex items-center gap-2 text-red-500">🚫 設為禁坐區</button>
                 </div>
                 <div class="border-t border-slate-100 bg-slate-50/50 max-h-40 overflow-y-auto">
-                    <p class="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-tighter">指定學生固定</p>
-                    ${nameOptions || '<p class="px-4 py-3 text-[10px] text-slate-300 italic">請輸入名單</p>'}
+                    <p class="px-3 py-1.5 text-[9px] font-black text-slate-400 uppercase tracking-tighter">指定學生固定</p>
+                    ${nameOptions || '<p class="px-3 py-2 text-[10px] text-slate-300 italic">請輸入名單</p>'}
                 </div>
             `;
             document.body.appendChild(popover);
@@ -219,28 +325,28 @@
             closeAllPopovers();
         }
 
-        function fixStudent(index, name) {
-            seats = seats.map(s => s.student === name ? { ...s, student: null, isFixed: false } : s);
-            seats[index] = { ...seats[index], type: 'normal', student: name, isFixed: true };
+        function fixStudent(index, studentId) {
+            const students = getParsedStudents();
+            const targetStu = students.find(s => s.id === studentId);
+            
+            seats = seats.map(s => (s.student && s.student.id === studentId) ? { ...s, student: null, isFixed: false } : s);
+            seats[index] = { ...seats[index], type: 'normal', student: targetStu, isFixed: true };
             initGrid();
             closeAllPopovers();
         }
 
-        function getNames() {
-            return document.getElementById('studentInput').value.split('\n').map(n => n.trim()).filter(n => n !== "");
-        }
-
         document.getElementById('studentInput').oninput = function(e) {
-            const names = getNames();
+            const students = getParsedStudents();
             const container = document.getElementById('studentChips');
             container.innerHTML = '';
-            names.forEach(name => {
+            students.forEach(s => {
                 const chip = document.createElement('button');
-                chip.className = `px-3 py-1.5 text-xs rounded-xl border transition-all ${priorityStudents.has(name) ? 'bg-amber-100 text-amber-700 border-amber-200 font-black' : 'bg-white text-slate-500 border-slate-200 shadow-sm hover:border-indigo-300'}`;
-                chip.innerText = name + (priorityStudents.has(name) ? ' ★' : '');
+                const isP = priorityStudents.has(s.id);
+                chip.className = `px-2.5 py-1 text-xs rounded-xl border transition-all ${isP ? 'bg-amber-100 text-amber-700 border-amber-200 font-black' : 'bg-white text-slate-500 border-slate-200 shadow-sm hover:border-indigo-300'}`;
+                chip.innerText = formatStudentLabel(s) + (isP ? ' ★' : '');
                 chip.onclick = () => {
-                    if(priorityStudents.has(name)) priorityStudents.delete(name);
-                    else priorityStudents.add(name);
+                    if(priorityStudents.has(s.id)) priorityStudents.delete(s.id);
+                    else priorityStudents.add(s.id);
                     document.getElementById('studentInput').dispatchEvent(new Event('input'));
                 };
                 container.appendChild(chip);
@@ -270,9 +376,9 @@
         }
 
         function generateArrangement() {
-            const names = getNames();
-            const fixedStudents = seats.filter(s => s.isFixed && s.student).map(s => s.student);
-            const toAssign = names.filter(n => !fixedStudents.includes(n));
+            const students = getParsedStudents();
+            const fixedStudentIds = seats.filter(s => s.isFixed && s.student).map(s => s.student.id);
+            const toAssign = students.filter(s => !fixedStudentIds.includes(s.id));
             const normalSeatsCount = seats.filter(s => s.type === 'normal' && !s.isFixed).length;
             
             const errorMsg = document.getElementById('errorMsg');
@@ -286,10 +392,10 @@
             let success = false;
             let attempts = 0;
             
-            while(attempts < 1000 && !success) {
+            while(attempts < 5000 && !success) {
                 attempts++;
-                let tempP = toAssign.filter(n => priorityStudents.has(n)).sort(() => Math.random() - 0.5);
-                let tempN = toAssign.filter(n => !priorityStudents.has(n)).sort(() => Math.random() - 0.5);
+                let tempP = toAssign.filter(s => priorityStudents.has(s.id)).sort(() => Math.random() - 0.5);
+                let tempN = toAssign.filter(s => !priorityStudents.has(s.id)).sort(() => Math.random() - 0.5);
                 let tempSeats = seats.map(s => ({...s, student: s.isFixed ? s.student : null}));
                 
                 for(let i=0; i<36 && tempP.length > 0; i++) {
@@ -310,7 +416,21 @@
             }
         }
 
+        function matchRuleQuery(stu, query) {
+            if (!stu || !query) return false;
+            query = query.trim().toLowerCase();
+            const qNum = String(parseInt(query, 10) || query).padStart(2, '0').slice(-2);
+            return (
+                stu.num === qNum ||
+                stu.num === query ||
+                stu.eng.toLowerCase().includes(query) ||
+                stu.chi.toLowerCase().includes(query) ||
+                stu.raw.toLowerCase().includes(query)
+            );
+        }
+
         function validate(layout) {
+            // 1. 避開規則檢查
             for(let i=0; i<36; i++) {
                 const s1 = layout[i].student;
                 if(!s1) continue;
@@ -324,10 +444,42 @@
                     const s2 = layout[nIdx].student;
                     if(!s2) continue;
                     for(const [b1, b2] of avoidRules) {
-                        if((s1===b1 && s2===b2) || (s1===b2 && s2===b1)) return false;
+                        const match1 = matchRuleQuery(s1, b1) && matchRuleQuery(s2, b2);
+                        const match2 = matchRuleQuery(s1, b2) && matchRuleQuery(s2, b1);
+                        if(match1 || match2) return false;
                     }
                 }
             }
+
+            // 2. 特殊座位規則 (12號與34號)
+            let idx12 = -1;
+            let idx34 = -1;
+            for (let i = 0; i < 36; i++) {
+                const stu = layout[i].student;
+                if (stu) {
+                    if (stu.num === '12') idx12 = i;
+                    if (stu.num === '34') idx34 = i;
+                }
+            }
+
+            if (idx12 !== -1) {
+                const r12 = Math.floor(idx12 / 6);
+                const c12 = idx12 % 6;
+
+                // 12號在第2~4直排（欄索引 1..3）且第 3 或 4 個位置（列索引 2..3）
+                if (c12 < 1 || c12 > 3 || r12 < 2 || r12 > 3) {
+                    return false;
+                }
+
+                // 34號在12號的左前、正前、右前其中一個
+                if (idx34 !== -1) {
+                    const r34 = Math.floor(idx34 / 6);
+                    const c34 = idx34 % 6;
+                    const isFrontArea = (r34 === r12 - 1) && (Math.abs(c34 - c12) <= 1);
+                    if (!isFrontArea) return false;
+                }
+            }
+
             return true;
         }
 
@@ -351,13 +503,16 @@
                 <head><meta charset='utf-8'><title>座位表</title>
                 <style>
                     table { border-collapse: collapse; width: 100%; font-family: "Microsoft JhengHei", sans-serif; }
-                    td { border: 1px solid #333; width: 16.6%; height: 80px; text-align: center; vertical-align: middle; position: relative; }
+                    td { border: 1px solid #333; width: 16.6%; height: 85px; text-align: center; vertical-align: middle; position: relative; padding: 4px; }
                     .teacher { background-color: #333333; color: white; font-weight: bold; }
                     .blocked { background-color: #eeeeee; color: #999999; }
                     .priority { color: #b45309; font-weight: bold; }
                     .fixed { border: 2px solid #f59e0b; }
                     .title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; }
                     .header-box { background-color: #333; color: white; padding: 10px; text-align: center; font-weight: bold; margin-bottom: 10px; }
+                    .num-tag { font-size: 11px; font-weight: bold; color: #4f46e5; }
+                    .eng-tag { font-size: 10px; color: #64748b; display: block; }
+                    .chi-tag { font-size: 14px; font-weight: bold; color: #1e293b; display: block; }
                 </style>
                 </head>
                 <body>
@@ -381,14 +536,20 @@
                         styleClass = 'class="blocked"';
                         content = "禁坐";
                     } else {
-                        const isPriority = priorityStudents.has(seat.student);
+                        const stu = seat.student;
+                        const isPriority = stu && priorityStudents.has(stu.id);
                         const isFixed = seat.isFixed;
                         if(isFixed) styleClass = 'class="fixed"';
                         
-                        let studentName = seat.student || "";
-                        if (isPriority) studentName = "★ " + studentName;
-                        if (isFixed) studentName += " (📌)";
-                        content = studentName;
+                        if (stu) {
+                            let star = isPriority ? "★ " : "";
+                            let pin = isFixed ? " 📌" : "";
+                            content = `
+                                ${stu.num ? `<div class="num-tag">${stu.num}</div>` : ''}
+                                ${stu.eng ? `<span class="eng-tag">${stu.eng}</span>` : ''}
+                                <span class="chi-tag">${star}${stu.chi || stu.raw}${pin}</span>
+                            `;
+                        }
                     }
                     tableHtml += `<td ${styleClass}>${content}</td>`;
                 }
