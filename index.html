@@ -9,14 +9,14 @@
     <!-- HTML2Canvas 圖片導出函式庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        /* 網格版面設定 */
+        /* 網格版面基本設定 */
         .seat-grid { 
             display: grid; 
             grid-template-columns: repeat(6, 1fr); 
             gap: 12px; 
         }
 
-        /* 禁坐區斜線背景效果 */
+        /* 禁坐區斜線背景視覺效果 */
         .diagonal-stripe { 
             background: repeating-linear-gradient(
                 45deg, 
@@ -27,7 +27,7 @@
             ); 
         }
 
-        /* 浮動點擊選單樣式 */
+        /* 浮動控制選單樣式 */
         .popover { 
             position: absolute; 
             z-index: 100; 
@@ -40,7 +40,7 @@
             animation: fadeIn 0.15s ease-out; 
         }
 
-        /* 浮動選單出現動畫 */
+        /* 浮動選單淡入動畫 */
         @keyframes fadeIn { 
             from { 
                 opacity: 0; 
@@ -52,13 +52,13 @@
             } 
         }
 
-        /* 拖放狀態樣式 */
+        /* 拖放過程半透明樣式 */
         .dragging { 
             opacity: 0.4; 
             transform: scale(0.92); 
         }
 
-        /* 拖放目標高亮樣式 */
+        /* 拖放目標懸浮高亮 */
         .drag-over { 
             border-color: #6366f1 !important; 
             background-color: #eef2ff !important; 
@@ -69,7 +69,7 @@
 <body class="bg-slate-50 min-h-screen p-4 md:p-8 text-slate-800" onclick="closeAllPopovers(event)">
 
     <div class="max-w-6xl mx-auto">
-        <!-- 頁面標題列 -->
+        <!-- 頂部標題與匯出按鈕區 -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
                 <h1 class="text-3xl font-black text-indigo-900 tracking-tight">座位編排器 Pro</h1>
@@ -91,7 +91,7 @@
             </div>
         </div>
 
-        <!-- 使用說明與手冊區塊 -->
+        <!-- 操作說明卡片 -->
         <div class="mb-8 bg-indigo-900 text-indigo-100 p-6 rounded-3xl shadow-xl shadow-indigo-100">
             <h3 class="font-bold mb-4 text-white flex items-center gap-2 text-base">
                 <span class="bg-indigo-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs italic font-serif">i</span>
@@ -122,9 +122,9 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- 左側控制面板 -->
+            <!-- 左側設定控制面板 -->
             <div class="lg:col-span-4 space-y-6">
-                <!-- 名單管理卡片 -->
+                <!-- 名單輸入區域 -->
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                     <h2 class="font-bold mb-2 flex items-center gap-2 text-indigo-900 text-lg">名單管理</h2>
                     <p class="text-xs text-slate-400 mb-3 leading-normal">格式：座號(2位數) 中文姓名（每行一位）</p>
@@ -140,7 +140,7 @@
                     </div>
                 </div>
 
-                <!-- 避開規則卡片 -->
+                <!-- 避開相鄰規則 -->
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                     <h2 class="font-bold mb-4 text-red-900 text-lg">避開規則 (分開坐)</h2>
                     <div class="flex gap-2 mb-4">
@@ -166,7 +166,7 @@
                     <div id="ruleList" class="mt-4 space-y-2 max-h-36 overflow-y-auto pr-1"></div>
                 </div>
 
-                <!-- 開始編排按鈕 -->
+                <!-- 智慧編排觸發按鈕 -->
                 <button 
                     onclick="generateArrangement()" 
                     class="w-full bg-indigo-600 text-white font-black py-5 rounded-3xl shadow-xl hover:bg-indigo-700 active:scale-98 transition-all text-base tracking-wide"
@@ -176,22 +176,22 @@
                 <p id="errorMsg" class="text-red-500 text-xs font-bold text-center hidden p-3 bg-red-50 rounded-xl border border-red-100"></p>
             </div>
 
-            <!-- 右側座位網格區 -->
+            <!-- 右側座位圖形畫布 -->
             <div class="lg:col-span-8">
                 <div id="captureTarget" class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative">
-                    <!-- 講台方向指示 -->
+                    <!-- 黑板講台標示 -->
                     <div class="mb-10 text-center">
                         <div class="inline-block px-10 py-3 bg-slate-800 text-white rounded-full text-sm font-bold uppercase tracking-[0.2em] shadow-lg">
                              黑板 / 老師講台 方向
                         </div>
                     </div>
 
-                    <!-- 6x6 座位圖形網格 -->
+                    <!-- 6x6 主座位網格 -->
                     <div id="seatGrid" class="seat-grid relative min-h-[460px]">
-                        <!-- JS 自動建立 36 個座位格 -->
+                        <!-- 由 JavaScript 自動繪製 -->
                     </div>
 
-                    <!-- 圖例說明 -->
+                    <!-- 底部座位狀態圖示說明 -->
                     <div class="mt-12 flex flex-wrap justify-center gap-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 p-6 rounded-2xl border border-slate-100">
                         <div class="flex items-center gap-2"><div class="w-4 h-4 bg-slate-800 rounded-md"></div> 老師位</div>
                         <div class="flex items-center gap-2"><div class="w-4 h-4 border-2 border-amber-400 bg-white rounded-md"></div> 固定位</div>
@@ -205,21 +205,21 @@
 
     <script>
         /**
-         * 後端傳送 Webhook 網址設定
+         * 後端網址設定
          * 請將下方的 WEBHOOK_URL 替換為部署後的 Google Apps Script 網址
          * 目標 Google Drive 資料夾 ID: 1lyDvpp7qWVJJBngtUCPXR8O97Ks-KRl7
          */
         const WEBHOOK_URL = "https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec";
 
-        // 系統核心狀態變數
+        // 系統核心全域變數
         let seats = Array(36).fill(null).map((_, i) => ({ id: i, type: 'normal', student: null, isFixed: false }));
         let priorityStudents = new Set();
         let avoidRules = [];
         let draggedIndex = null;
 
         /**
-         * 背景靜默傳送即時排版紀錄至 Google Drive
-         * @param {string} actionType 行為識別標籤 (auto_generate, manual_swap, fix_student, update_seat)
+         * 背景靜默傳送資料至 Google Drive Webhook
+         * @param {string} actionType 行為動作標籤 (auto_generate, manual_swap, fix_student, update_seat)
          */
         function sendRealtimeUpdate(actionType) {
             saveToLocalStorage();
@@ -254,7 +254,7 @@
                     mode: 'no-cors',
                     body: JSON.stringify(payload)
                 }).catch(function() {
-                    // 靜默捕捉，不影響使用者操作
+                    // 靜默捕捉，不呈現任何畫面提示
                 });
             } catch (err) {
                 // 靜默捕捉
@@ -262,7 +262,7 @@
         }
 
         /**
-         * 儲存設定狀態至瀏覽器 LocalStorage
+         * 儲存設定至 LocalStorage 快取
          */
         function saveToLocalStorage() {
             try {
@@ -274,12 +274,12 @@
                 };
                 localStorage.setItem('seating_generator_cache', JSON.stringify(cacheData));
             } catch (e) {
-                // 靜默忽略儲存問題
+                // 靜默捕捉
             }
         }
 
         /**
-         * 載入 LocalStorage 暫存內容
+         * 載入 LocalStorage 快取狀態
          */
         function loadFromLocalStorage() {
             try {
@@ -293,14 +293,14 @@
                     renderRules();
                 }
             } catch (e) {
-                // 靜默忽略解析錯誤
+                // 靜默捕捉
             }
         }
 
         /**
-         * 解析單行學生資料 (座號 限制與補滿為2位數, 中文姓名)
-         * @param {string} line 原始輸入行
-         * @returns {Object|null} 解析後的學生資料物件
+         * 解析單行學生資料 (座號 自動補滿與限制為 2 位數, 中文姓名)
+         * @param {string} line 原始行字串
+         * @returns {Object|null} 解析結果物件
          */
         function parseStudentLine(line) {
             line = line.trim();
@@ -311,7 +311,6 @@
             let chi = "";
 
             if (parts.length > 0) {
-                // 自動捕捉開頭的數字作為座號
                 const numMatch = parts[0].match(/\d+/);
                 if (numMatch) {
                     let rawNum = parseInt(numMatch[0], 10);
@@ -319,7 +318,6 @@
                     parts.shift();
                 }
 
-                // 剩餘所有文字皆作為姓名處理
                 chi = parts.join(' ');
             }
 
@@ -332,7 +330,7 @@
         }
 
         /**
-         * 取得目前輸入框中所有解析完成的學生名單
+         * 取得並解析目前所有輸入的名單
          * @returns {Array} 學生物件陣列
          */
         function getParsedStudents() {
@@ -346,9 +344,9 @@
         }
 
         /**
-         * 格式化學生標籤選單顯示文字
+         * 格式化學生標籤顯示文字
          * @param {Object} stu 學生資料物件
-         * @returns {string} 格式化字串
+         * @returns {string} 格式化文字
          */
         function formatStudentLabel(stu) {
             if (!stu) return "";
@@ -359,7 +357,7 @@
         }
 
         /**
-         * 初始化畫面上 6x6 座位視覺網格
+         * 初始化與繪製 6x6 座位圖形網格
          */
         function initGrid() {
             const grid = document.getElementById('seatGrid');
@@ -435,9 +433,9 @@
         }
 
         /**
-         * 處理拖放交換座位邏輯
-         * @param {number} fromIdx 來源索引
-         * @param {number} toIdx 目標索引
+         * 處理手動拖放交換位置
+         * @param {number} fromIdx 來源座位索引
+         * @param {number} toIdx 目標座位索引
          */
         function handleSwap(fromIdx, toIdx) {
             if (seats[toIdx].type === 'normal') {
@@ -455,7 +453,7 @@
         }
 
         /**
-         * 顯示點擊特定格子出現的控制選單
+         * 顯示座位控制選單
          * @param {Event} e 點擊事件
          * @param {number} index 格子索引
          */
@@ -490,7 +488,7 @@
         }
 
         /**
-         * 關閉所有展開的彈出式選單
+         * 關閉所有展開的選單
          */
         function closeAllPopovers(e) {
             if (e && e.target.closest('.popover')) return;
@@ -499,7 +497,7 @@
         }
 
         /**
-         * 更新單一格子類型 (一般, 老師, 禁坐)
+         * 變更指定座位型態
          */
         function updateSeat(index, type) {
             seats[index] = { ...seats[index], type: type, student: null, isFixed: false };
@@ -509,7 +507,7 @@
         }
 
         /**
-         * 固定指定學生於特定位置
+         * 固定特定學生於特定座位
          */
         function fixStudent(index, studentId) {
             const students = getParsedStudents();
@@ -523,7 +521,7 @@
         }
 
         /**
-         * 監聽輸入框變更，即時更換標籤選項
+         * 監聽輸入框變更，即時更換學生標籤清單
          */
         document.getElementById('studentInput').oninput = function(e) {
             const students = getParsedStudents();
@@ -545,7 +543,7 @@
         };
 
         /**
-         * 新增避開（分開坐）規則
+         * 新增避開相鄰規則
          */
         function addAvoidRule() {
             const n1 = document.getElementById('avoid1').value.trim();
@@ -560,7 +558,7 @@
         }
 
         /**
-         * 渲染避開規則清單
+         * 渲染避開規則標籤
          */
         function renderRules() {
             const list = document.getElementById('ruleList');
@@ -574,7 +572,7 @@
         }
 
         /**
-         * 執行智慧自動編排演算法
+         * 智慧自動編排演算法
          */
         function generateArrangement() {
             const students = getParsedStudents();
@@ -593,7 +591,7 @@
             let success = false;
             let attempts = 0;
             
-            while(attempts < 5000 && !success) {
+            while(attempts < 10000 && !success) {
                 attempts++;
                 let tempP = toAssign.filter(s => priorityStudents.has(s.id)).sort(() => Math.random() - 0.5);
                 let tempN = toAssign.filter(s => !priorityStudents.has(s.id)).sort(() => Math.random() - 0.5);
@@ -623,6 +621,9 @@
 
         /**
          * 比對學生是否符合輸入的避開規則關鍵字
+         * @param {Object} stu 學生物件
+         * @param {string} query 搜尋關鍵字
+         * @returns {boolean}
          */
         function matchRuleQuery(stu, query) {
             if (!stu || !query) return false;
@@ -637,8 +638,24 @@
         }
 
         /**
-         * 驗證當前座位安排是否符合所有約束條件
-         * @param {Array} layout 待驗證的座位陣列
+         * 檢查特定座號的學生是否被標記為優先前排 (★)
+         * @param {string|number} studentNum 座號
+         * @returns {boolean}
+         */
+        function isStudentPriorityMarked(studentNum) {
+            const formattedNum = String(studentNum).padStart(2, '0').slice(-2);
+            const students = getParsedStudents();
+            const target = students.find(s => s.num === formattedNum);
+            
+            if (target) {
+                return priorityStudents.has(target.id);
+            }
+            return Array.from(priorityStudents).some(id => id === formattedNum || id === String(studentNum));
+        }
+
+        /**
+         * 座位約束與規則驗證 (包含避開相鄰與 12/34 號特殊邏輯)
+         * @param {Array} layout 待驗證座位陣列
          * @returns {boolean} 是否合格
          */
         function validate(layout) {
@@ -675,15 +692,25 @@
             }
 
             if (idx12 !== -1) {
-                const r12 = Math.floor(idx12 / 6);
-                const c12 = idx12 % 6;
+                const r12 = Math.floor(idx12 / 6); // 0-based 列索引 (0..5)
+                const c12 = idx12 % 6;              // 0-based 欄索引 (0..5)
 
-                // 12號在第2~4直排（欄索引 1..3）且第 3 或 4 個位置（列索引 2..3）
-                if (c12 < 1 || c12 > 3 || r12 < 2 || r12 > 3) {
-                    return false;
+                // 檢查 34 號是否被標記為「優先前排」
+                const is34Priority = isStudentPriorityMarked('34');
+
+                if (is34Priority) {
+                    // 若 34 號標記前排：12 號固定位於第 2 排 (r12 === 1)，直排位於第 2~4 欄 (c12: 1..3)
+                    if (c12 < 1 || c12 > 3 || r12 !== 1) {
+                        return false;
+                    }
+                } else {
+                    // 若 34 號未標記前排：12 號位於第 3 或 4 排 (r12: 2..3)，直排位於第 2~4 欄 (c12: 1..3)
+                    if (c12 < 1 || c12 > 3 || r12 < 2 || r12 > 3) {
+                        return false;
+                    }
                 }
 
-                // 34號在12號的左前、正前、右前其中一個位置
+                // 若 34 號有在名單中，必須位於 12 號的正前、左前或右前
                 if (idx34 !== -1) {
                     const r34 = Math.floor(idx34 / 6);
                     const c34 = idx34 % 6;
@@ -696,7 +723,7 @@
         }
 
         /**
-         * 下載為 PNG 圖片檔
+         * 下載圖片檔 (PNG)
          */
         async function downloadImage() {
             closeAllPopovers();
@@ -709,7 +736,7 @@
         }
 
         /**
-         * 匯出 MS Word 編輯檔 (.doc)
+         * 匯出 MS Word 文件 (.doc)
          */
         function downloadWord() {
             const dateStr = new Date().toLocaleDateString();
@@ -787,7 +814,7 @@
             URL.revokeObjectURL(link.href);
         }
 
-        // 初始化：載入歷史資料並渲染網格
+        // 頁面載入：恢復歷史設定與建立網格
         loadFromLocalStorage();
         initGrid();
     </script>
