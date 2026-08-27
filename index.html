@@ -4,17 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>6x6 智慧座位編排器 (Word匯出版)</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTML2Canvas 圖片導出函式庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
+        /* 網格版面設定 */
         .seat-grid { 
             display: grid; 
             grid-template-columns: repeat(6, 1fr); 
             gap: 12px; 
         }
+
+        /* 禁坐區斜線背景效果 */
         .diagonal-stripe { 
-            background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #e2e8f0 10px, #e2e8f0 20px); 
+            background: repeating-linear-gradient(
+                45deg, 
+                #f1f5f9, 
+                #f1f5f9 10px, 
+                #e2e8f0 10px, 
+                #e2e8f0 20px
+            ); 
         }
+
+        /* 浮動點擊選單樣式 */
         .popover { 
             position: absolute; 
             z-index: 100; 
@@ -26,6 +39,8 @@
             padding: 10px; 
             animation: fadeIn 0.15s ease-out; 
         }
+
+        /* 浮動選單出現動畫 */
         @keyframes fadeIn { 
             from { 
                 opacity: 0; 
@@ -36,10 +51,14 @@
                 transform: translateY(0); 
             } 
         }
+
+        /* 拖放狀態樣式 */
         .dragging { 
             opacity: 0.4; 
             transform: scale(0.92); 
         }
+
+        /* 拖放目標高亮樣式 */
         .drag-over { 
             border-color: #6366f1 !important; 
             background-color: #eef2ff !important; 
@@ -50,23 +69,29 @@
 <body class="bg-slate-50 min-h-screen p-4 md:p-8 text-slate-800" onclick="closeAllPopovers(event)">
 
     <div class="max-w-6xl mx-auto">
-        <!-- Header -->
+        <!-- 頁面標題列 -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
                 <h1 class="text-3xl font-black text-indigo-900 tracking-tight">座位編排器 Pro</h1>
                 <p class="text-slate-500 font-medium text-sm mt-1">智慧編排 + 自由拖放系統</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <button onclick="downloadImage()" class="px-5 py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-2">
+                <button 
+                    onclick="downloadImage()" 
+                    class="px-5 py-3 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-2"
+                >
                     🖼️ 下載圖片
                 </button>
-                <button onclick="downloadWord()" class="px-5 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2">
+                <button 
+                    onclick="downloadWord()" 
+                    class="px-5 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2"
+                >
                     📥 下載 Word 檔
                 </button>
             </div>
         </div>
 
-        <!-- 使用說明與手冊 -->
+        <!-- 使用說明與手冊區塊 -->
         <div class="mb-8 bg-indigo-900 text-indigo-100 p-6 rounded-3xl shadow-xl shadow-indigo-100">
             <h3 class="font-bold mb-4 text-white flex items-center gap-2 text-base">
                 <span class="bg-indigo-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs italic font-serif">i</span>
@@ -75,7 +100,7 @@
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
                 <div class="bg-indigo-800/50 p-4 rounded-2xl border border-indigo-700/60">
                     <p class="font-bold text-indigo-300 mb-2">1. 名單與優先權</p>
-                    <p class="leading-relaxed opacity-80">貼上「座號 英文名 中文名」（一行一位），可點擊標籤標記「★ 優先前排」。</p>
+                    <p class="leading-relaxed opacity-80">貼上「座號 中文名」（一行一位），可點擊標籤標記「★ 優先前排」。</p>
                 </div>
                 <div class="bg-indigo-800/50 p-4 rounded-2xl border border-indigo-700/60">
                     <p class="font-bold text-indigo-300 mb-2">2. 座位選單</p>
@@ -97,12 +122,17 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- Left Controls -->
+            <!-- 左側控制面板 -->
             <div class="lg:col-span-4 space-y-6">
+                <!-- 名單管理卡片 -->
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                     <h2 class="font-bold mb-2 flex items-center gap-2 text-indigo-900 text-lg">名單管理</h2>
-                    <p class="text-xs text-slate-400 mb-3 leading-normal">格式：座號(2位數) 英文姓名 中文姓名（每行一位）</p>
-                    <textarea id="studentInput" class="w-full h-44 p-4 border border-slate-200 bg-slate-50/50 rounded-2xl text-sm mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-mono resize-none transition-all" placeholder="01 Alex 張三&#10;02 Bob 李四&#10;12 John 王小明&#10;34 Amy 陳小華"></textarea>
+                    <p class="text-xs text-slate-400 mb-3 leading-normal">格式：座號(2位數) 中文姓名（每行一位）</p>
+                    <textarea 
+                        id="studentInput" 
+                        class="w-full h-44 p-4 border border-slate-200 bg-slate-50/50 rounded-2xl text-sm mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-mono resize-none transition-all" 
+                        placeholder="01 張三&#10;02 李四&#10;12 王小明&#10;34 陳小華"
+                    ></textarea>
                     
                     <div id="priorityArea" class="mt-4">
                         <p class="text-[10px] font-bold text-slate-400 uppercase mb-3 tracking-wider">標記優先前排 (★)</p>
@@ -110,35 +140,58 @@
                     </div>
                 </div>
 
+                <!-- 避開規則卡片 -->
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                     <h2 class="font-bold mb-4 text-red-900 text-lg">避開規則 (分開坐)</h2>
                     <div class="flex gap-2 mb-4">
-                        <input id="avoid1" type="text" placeholder="座號/姓名 A" class="w-1/2 p-3 text-sm border border-slate-200 bg-slate-50/50 rounded-xl outline-none focus:ring-2 focus:ring-red-400 transition-all">
-                        <input id="avoid2" type="text" placeholder="座號/姓名 B" class="w-1/2 p-3 text-sm border border-slate-200 bg-slate-50/50 rounded-xl outline-none focus:ring-2 focus:ring-red-400 transition-all">
+                        <input 
+                            id="avoid1" 
+                            type="text" 
+                            placeholder="座號/姓名 A" 
+                            class="w-1/2 p-3 text-sm border border-slate-200 bg-slate-50/50 rounded-xl outline-none focus:ring-2 focus:ring-red-400 transition-all"
+                        >
+                        <input 
+                            id="avoid2" 
+                            type="text" 
+                            placeholder="座號/姓名 B" 
+                            class="w-1/2 p-3 text-sm border border-slate-200 bg-slate-50/50 rounded-xl outline-none focus:ring-2 focus:ring-red-400 transition-all"
+                        >
                     </div>
-                    <button onclick="addAvoidRule()" class="w-full py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 active:scale-98 transition-all">➕ 新增規則</button>
+                    <button 
+                        onclick="addAvoidRule()" 
+                        class="w-full py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 active:scale-98 transition-all"
+                    >
+                        ➕ 新增規則
+                    </button>
                     <div id="ruleList" class="mt-4 space-y-2 max-h-36 overflow-y-auto pr-1"></div>
                 </div>
 
-                <button onclick="generateArrangement()" class="w-full bg-indigo-600 text-white font-black py-5 rounded-3xl shadow-xl hover:bg-indigo-700 active:scale-98 transition-all text-base tracking-wide">
+                <!-- 開始編排按鈕 -->
+                <button 
+                    onclick="generateArrangement()" 
+                    class="w-full bg-indigo-600 text-white font-black py-5 rounded-3xl shadow-xl hover:bg-indigo-700 active:scale-98 transition-all text-base tracking-wide"
+                >
                     🎲 開始智慧編排
                 </button>
                 <p id="errorMsg" class="text-red-500 text-xs font-bold text-center hidden p-3 bg-red-50 rounded-xl border border-red-100"></p>
             </div>
 
-            <!-- Right Grid -->
+            <!-- 右側座位網格區 -->
             <div class="lg:col-span-8">
                 <div id="captureTarget" class="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm relative">
+                    <!-- 講台方向指示 -->
                     <div class="mb-10 text-center">
                         <div class="inline-block px-10 py-3 bg-slate-800 text-white rounded-full text-sm font-bold uppercase tracking-[0.2em] shadow-lg">
                              黑板 / 老師講台 方向
                         </div>
                     </div>
 
+                    <!-- 6x6 座位圖形網格 -->
                     <div id="seatGrid" class="seat-grid relative min-h-[460px]">
-                        <!-- Seats generated by JS -->
+                        <!-- JS 自動建立 36 個座位格 -->
                     </div>
 
+                    <!-- 圖例說明 -->
                     <div class="mt-12 flex flex-wrap justify-center gap-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 p-6 rounded-2xl border border-slate-100">
                         <div class="flex items-center gap-2"><div class="w-4 h-4 bg-slate-800 rounded-md"></div> 老師位</div>
                         <div class="flex items-center gap-2"><div class="w-4 h-4 border-2 border-amber-400 bg-white rounded-md"></div> 固定位</div>
@@ -152,21 +205,21 @@
 
     <script>
         /**
-         * 後端網址設定
-         * 請將下方的 WEBHOOK_URL 替換為您完成部署後的 Google Apps Script Web App 網址
+         * 後端傳送 Webhook 網址設定
+         * 請將下方的 WEBHOOK_URL 替換為部署後的 Google Apps Script 網址
          * 目標 Google Drive 資料夾 ID: 1lyDvpp7qWVJJBngtUCPXR8O97Ks-KRl7
          */
         const WEBHOOK_URL = "https://script.google.com/macros/s/YOUR_GAS_DEPLOYMENT_ID/exec";
 
-        // 全域狀態變數
+        // 系統核心狀態變數
         let seats = Array(36).fill(null).map((_, i) => ({ id: i, type: 'normal', student: null, isFixed: false }));
         let priorityStudents = new Set();
         let avoidRules = [];
         let draggedIndex = null;
 
         /**
-         * 背景靜默同步傳送至 Google Drive
-         * @param {string} actionType 行為識別標記 (auto_generate, manual_swap, fix_student, update_seat)
+         * 背景靜默傳送即時排版紀錄至 Google Drive
+         * @param {string} actionType 行為識別標籤 (auto_generate, manual_swap, fix_student, update_seat)
          */
         function sendRealtimeUpdate(actionType) {
             saveToLocalStorage();
@@ -186,7 +239,6 @@
                     isFixed: s.isFixed,
                     student: s.student ? {
                         num: s.student.num,
-                        eng: s.student.eng,
                         chi: s.student.chi,
                         id: s.student.id
                     } : null
@@ -202,7 +254,7 @@
                     mode: 'no-cors',
                     body: JSON.stringify(payload)
                 }).catch(function() {
-                    // 靜默捕捉，絕不安裝或跳出視窗
+                    // 靜默捕捉，不影響使用者操作
                 });
             } catch (err) {
                 // 靜默捕捉
@@ -210,7 +262,7 @@
         }
 
         /**
-         * 本地狀態快取機制 (防止重新整理遺失)
+         * 儲存設定狀態至瀏覽器 LocalStorage
          */
         function saveToLocalStorage() {
             try {
@@ -222,12 +274,12 @@
                 };
                 localStorage.setItem('seating_generator_cache', JSON.stringify(cacheData));
             } catch (e) {
-                // Ignore storage issues
+                // 靜默忽略儲存問題
             }
         }
 
         /**
-         * 讀取本地快取
+         * 載入 LocalStorage 暫存內容
          */
         function loadFromLocalStorage() {
             try {
@@ -241,12 +293,14 @@
                     renderRules();
                 }
             } catch (e) {
-                // Ignore parsing errors
+                // 靜默忽略解析錯誤
             }
         }
 
         /**
-         * 解析單行學生資料 (座號 限制與補滿2位數, 英文姓名, 中文姓名)
+         * 解析單行學生資料 (座號 限制與補滿為2位數, 中文姓名)
+         * @param {string} line 原始輸入行
+         * @returns {Object|null} 解析後的學生資料物件
          */
         function parseStudentLine(line) {
             line = line.trim();
@@ -254,10 +308,10 @@
 
             const parts = line.split(/\s+/);
             let num = "";
-            let eng = "";
             let chi = "";
 
             if (parts.length > 0) {
+                // 自動捕捉開頭的數字作為座號
                 const numMatch = parts[0].match(/\d+/);
                 if (numMatch) {
                     let rawNum = parseInt(numMatch[0], 10);
@@ -265,24 +319,12 @@
                     parts.shift();
                 }
 
-                const engParts = [];
-                const chiParts = [];
-
-                parts.forEach(p => {
-                    if (/^[A-Za-z\s'-]+$/.test(p)) {
-                        engParts.push(p);
-                    } else {
-                        chiParts.push(p);
-                    }
-                });
-
-                eng = engParts.join(' ');
-                chi = chiParts.join(' ');
+                // 剩餘所有文字皆作為姓名處理
+                chi = parts.join(' ');
             }
 
             return {
                 num: num,
-                eng: eng,
                 chi: chi,
                 raw: line,
                 id: num || line
@@ -290,7 +332,8 @@
         }
 
         /**
-         * 取得並解析輸入框中所有學生名單
+         * 取得目前輸入框中所有解析完成的學生名單
+         * @returns {Array} 學生物件陣列
          */
         function getParsedStudents() {
             const rawLines = document.getElementById('studentInput').value.split('\n');
@@ -303,19 +346,20 @@
         }
 
         /**
-         * 格式化標籤顯示名稱
+         * 格式化學生標籤選單顯示文字
+         * @param {Object} stu 學生資料物件
+         * @returns {string} 格式化字串
          */
         function formatStudentLabel(stu) {
             if (!stu) return "";
             let label = "";
             if (stu.num) label += `[${stu.num}] `;
-            if (stu.eng) label += `${stu.eng} `;
             if (stu.chi) label += stu.chi;
             return label.trim() || stu.raw;
         }
 
         /**
-         * 渲染主座位 6x6 網格
+         * 初始化畫面上 6x6 座位視覺網格
          */
         function initGrid() {
             const grid = document.getElementById('seatGrid');
@@ -366,14 +410,13 @@
                     if (stu) {
                         studentContent = `
                             ${stu.num ? `<span class="text-[10px] font-mono font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.2 rounded-md">${stu.num}</span>` : ''}
-                            ${stu.eng ? `<span class="text-[9px] font-semibold text-slate-400 leading-none truncate max-w-full">${stu.eng}</span>` : ''}
                             ${stu.chi ? `<span class="font-black text-xs md:text-sm ${isPriority ? 'text-amber-600' : 'text-slate-700'} leading-tight truncate max-w-full">${stu.chi}</span>` : ''}
                         `;
                     }
 
                     btn.innerHTML = `
                         <span class="absolute top-1.5 left-1.5 text-[8px] font-bold text-slate-300">${i+1}</span>
-                        <div class="flex flex-col items-center justify-center w-full h-full px-1 py-1 text-center gap-0.5">
+                        <div class="flex flex-col items-center justify-center w-full h-full px-1 py-1 text-center gap-1">
                             ${studentContent}
                         </div>
                         ${isPriority ? '<span class="absolute top-1 right-1.5 text-amber-500 text-[10px]">★</span>' : ''}
@@ -392,7 +435,9 @@
         }
 
         /**
-         * 處理拖放交換位置
+         * 處理拖放交換座位邏輯
+         * @param {number} fromIdx 來源索引
+         * @param {number} toIdx 目標索引
          */
         function handleSwap(fromIdx, toIdx) {
             if (seats[toIdx].type === 'normal') {
@@ -410,7 +455,9 @@
         }
 
         /**
-         * 顯示點擊浮動控制選單
+         * 顯示點擊特定格子出現的控制選單
+         * @param {Event} e 點擊事件
+         * @param {number} index 格子索引
          */
         function showPopover(e, index) {
             closeAllPopovers();
@@ -443,7 +490,7 @@
         }
 
         /**
-         * 關閉所有浮動控制選單
+         * 關閉所有展開的彈出式選單
          */
         function closeAllPopovers(e) {
             if (e && e.target.closest('.popover')) return;
@@ -452,7 +499,7 @@
         }
 
         /**
-         * 更新單一格子屬性
+         * 更新單一格子類型 (一般, 老師, 禁坐)
          */
         function updateSeat(index, type) {
             seats[index] = { ...seats[index], type: type, student: null, isFixed: false };
@@ -462,7 +509,7 @@
         }
 
         /**
-         * 固定特定學生於特定位置
+         * 固定指定學生於特定位置
          */
         function fixStudent(index, studentId) {
             const students = getParsedStudents();
@@ -476,7 +523,7 @@
         }
 
         /**
-         * 監聽輸入框變化
+         * 監聽輸入框變更，即時更換標籤選項
          */
         document.getElementById('studentInput').oninput = function(e) {
             const students = getParsedStudents();
@@ -498,7 +545,7 @@
         };
 
         /**
-         * 新增避開規則
+         * 新增避開（分開坐）規則
          */
         function addAvoidRule() {
             const n1 = document.getElementById('avoid1').value.trim();
@@ -513,7 +560,7 @@
         }
 
         /**
-         * 渲染避開規則標籤
+         * 渲染避開規則清單
          */
         function renderRules() {
             const list = document.getElementById('ruleList');
@@ -527,7 +574,7 @@
         }
 
         /**
-         * 智慧自動編排演算法
+         * 執行智慧自動編排演算法
          */
         function generateArrangement() {
             const students = getParsedStudents();
@@ -575,7 +622,7 @@
         }
 
         /**
-         * 比對字串規則 (支援座號或姓名)
+         * 比對學生是否符合輸入的避開規則關鍵字
          */
         function matchRuleQuery(stu, query) {
             if (!stu || !query) return false;
@@ -584,17 +631,18 @@
             return (
                 stu.num === qNum ||
                 stu.num === query ||
-                stu.eng.toLowerCase().includes(query) ||
                 stu.chi.toLowerCase().includes(query) ||
                 stu.raw.toLowerCase().includes(query)
             );
         }
 
         /**
-         * 座位相鄰規則與特殊座號驗證
+         * 驗證當前座位安排是否符合所有約束條件
+         * @param {Array} layout 待驗證的座位陣列
+         * @returns {boolean} 是否合格
          */
         function validate(layout) {
-            // 1. 檢查避開規則
+            // 1. 檢查避開相鄰規則
             for(let i=0; i<36; i++) {
                 const s1 = layout[i].student;
                 if(!s1) continue;
@@ -635,7 +683,7 @@
                     return false;
                 }
 
-                // 34號在12號的左前、正前、右前其中一個
+                // 34號在12號的左前、正前、右前其中一個位置
                 if (idx34 !== -1) {
                     const r34 = Math.floor(idx34 / 6);
                     const c34 = idx34 % 6;
@@ -648,7 +696,7 @@
         }
 
         /**
-         * 下載圖片檔 (PNG)
+         * 下載為 PNG 圖片檔
          */
         async function downloadImage() {
             closeAllPopovers();
@@ -661,7 +709,7 @@
         }
 
         /**
-         * 匯出 MS Word 文件 (.doc)
+         * 匯出 MS Word 編輯檔 (.doc)
          */
         function downloadWord() {
             const dateStr = new Date().toLocaleDateString();
@@ -678,7 +726,6 @@
                     .title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; }
                     .header-box { background-color: #333; color: white; padding: 10px; text-align: center; font-weight: bold; margin-bottom: 10px; }
                     .num-tag { font-size: 11px; font-weight: bold; color: #4f46e5; }
-                    .eng-tag { font-size: 10px; color: #64748b; display: block; }
                     .chi-tag { font-size: 14px; font-weight: bold; color: #1e293b; display: block; }
                 </style>
                 </head>
@@ -713,7 +760,6 @@
                             let pin = isFixed ? " 📌" : "";
                             content = `
                                 ${stu.num ? `<div class="num-tag">${stu.num}</div>` : ''}
-                                ${stu.eng ? `<span class="eng-tag">${stu.eng}</span>` : ''}
                                 <span class="chi-tag">${star}${stu.chi || stu.raw}${pin}</span>
                             `;
                         }
@@ -741,7 +787,7 @@
             URL.revokeObjectURL(link.href);
         }
 
-        // 初始化讀取快取並建立網格
+        // 初始化：載入歷史資料並渲染網格
         loadFromLocalStorage();
         initGrid();
     </script>
